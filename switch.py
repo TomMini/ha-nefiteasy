@@ -71,16 +71,18 @@ class NefitSwitch(NefitDevice, SwitchDevice):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn the entity on."""
-        self._client.nefit.put_value(self.get_endpoint(), "on")
-
-        _LOGGER.debug("Switch Nefit %s ON, endpoint=%s.", self._key, self.get_endpoint())
+        await self.async_change_state('on')
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn the entity off."""
-        self._client.nefit.put_value(self.get_endpoint(), "off")
+        await self.async_change_state('off')
 
-        _LOGGER.debug("Switch Nefit %s OFF, endpoint=%s.", self._key, self.get_endpoint())
+    async def async_change_state(self, new_state, **kwargs):
+        self._client.nefit.put_value(self.get_endpoint(), new_state)
+        await asyncio.wait_for(self._client.nefit.xmppclient.message_event.wait(), timeout=30)
+        self._client.data[self._key] = new_state
 
+        _LOGGER.debug("Switch Nefit %s %s, endpoint=%s.", self._key, new_state, self.get_endpoint())
 
 class NefitHotWater(NefitSwitch):
 

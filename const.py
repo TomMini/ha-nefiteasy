@@ -12,12 +12,16 @@ CONF_MIN_TEMP = 'min_temp'
 CONF_MAX_TEMP = 'max_temp'
 CONF_SWITCHES = 'switches'
 CONF_SENSORS = 'sensors'
+CONF_HOLIDAY_TEMP = "holiday_temp"
+CONF_HOLIDAY_DURATION = "holiday_duration"
 
 DISPATCHER_ON_DEVICE_UPDATE = "nefiteasy_{key}_on_device_update"
 
 STATE_CONNECTED = 'connected'
 STATE_INIT = 'initializing'
 STATE_ERROR_AUTH = 'authentication_failed'
+
+DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 name = 'name'
 url = 'url'
@@ -75,7 +79,7 @@ SWITCH_TYPES = {
     },
     'holiday_mode': {
         name: "Nefit Holiday mode",
-        url: '/heatingCircuits/hc1/holidayMode/status',
+        url: '/heatingCircuits/hc1/holidayMode/activated',
         short: 'HMD',
         icon: 'mdi:briefcase-outline'
     },

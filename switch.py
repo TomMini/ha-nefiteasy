@@ -6,11 +6,13 @@ https://home-assistant.io/components/xxxxxx/
 
 import asyncio
 import logging
+from datetime import datetime, timedelta, date
 
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import STATE_OFF, STATE_ON
 
-from .const import DOMAIN, CONF_SWITCHES, SWITCH_TYPES
+from .const import (DOMAIN, SWITCH_TYPES, DATE_FORMAT, 
+    CONF_SWITCHES, CONF_HOLIDAY_TEMP, CONF_HOLIDAY_DURATION)
 from .nefit_device import NefitDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,10 +22,15 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     client = hass.data[DOMAIN]["client"]
 
     devices = []
-    for key in hass.data[DOMAIN]["config"][CONF_SWITCHES]:
+    config = hass.data[DOMAIN]["config"]
+    for key in config[CONF_SWITCHES]:
         dev = SWITCH_TYPES[key]
         if key == 'hot_water':
             devices.append(NefitHotWater(client, key, dev))
+        elif key == 'holiday_mode':
+            temp = config[CONF_HOLIDAY_TEMP]
+            duration = config[CONF_HOLIDAY_DURATION]
+            devices.append(NefitHolidayMode(client, key, dev, temp, duration))
         elif key == 'home_entrance_detection':
             await setup_home_entrance_detection(devices, client, key, dev)
         else:
@@ -87,3 +94,28 @@ class NefitHotWater(NefitSwitch):
     def get_endpoint(self):
         endpoint = 'dhwOperationClockMode' if self._client.data.get('user_mode') == 'clock' else 'dhwOperationManualMode'
         return '/dhwCircuits/dhwA/' + endpoint
+
+
+class NefitHolidayMode(NefitSwitch):
+
+    def __init__(self, client, key, device, temp, duration):
+        """Initialize the switch."""
+        super().__init__(client, key, device)
+        self._temp = temp
+        self._duration = duration
+
+    async def async_turn_on(self, **kwargs) -> None:      
+        """Turn the entity on."""
+
+        if self._client.data.get('user_mode') == 'manual':
+            self._client.nefit.set_usermode('clock')
+            await asyncio.wait_for(self._client.nefit.xmppclient.message_event.wait(), timeout=30)
+            self._client.data['user_mode'] = 'clock'
+
+        await super().async_turn_on()
+
+        start = date.now()
+        end = start + timedelta(days=self._duration)
+        self._client.nefit.put_value('/heatingCircuits/hc1/holidayMode/temperature', self._temp)
+        self._client.nefit.put_value('/heatingCircuits/hc1/holidayMode/start', start.strftime(DATE_FORMAT))
+        self._client.nefit.put_value('/heatingCircuits/hc1/holidayMode/end', end.strftime(DATE_FORMAT))

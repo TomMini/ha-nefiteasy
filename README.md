@@ -20,6 +20,8 @@ nefiteasy:
   name: Nefit Easy #below here all optional settings
   min_temp: 15
   max_temp: 27
+  holiday_temp: 10
+  holiday_duration: 31 #number of days to set the holiday mode from now
   sensors:
    - #list of sensors to be exposed
   switches:

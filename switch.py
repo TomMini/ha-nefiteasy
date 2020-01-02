@@ -6,7 +6,7 @@ https://home-assistant.io/components/xxxxxx/
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import STATE_OFF, STATE_ON
@@ -116,7 +116,7 @@ class NefitHolidayMode(NefitSwitch):
 
         await super().async_turn_on()
 
-        start = date.now()
+        start = datetime.now()
         end = start + timedelta(days=self._duration)
         self._client.nefit.put_value('/heatingCircuits/hc1/holidayMode/temperature', self._temp)
         self._client.nefit.put_value('/heatingCircuits/hc1/holidayMode/start', start.strftime(DATE_FORMAT))
